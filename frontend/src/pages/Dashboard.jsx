@@ -16,6 +16,8 @@ import DocumentCard from '../components/documents/DocumentCard'
 import Timeline from '../components/ui/Timeline'
 import EmptyState from '../components/ui/EmptyState'
 import GlowButton from '../components/ui/GlowButton'
+import { ShieldCheck, ExternalLink } from 'lucide-react'
+import { EXPLORER, CONTRACT_ADDRESS, IS_DEPLOYED } from '../genlayer/genlayerClient'
 import { summarizeDocuments, severityByCategory, severityColor, statusForDocument, STATUS_META } from '../utils/riskScoring'
 import {
   BarChart,
@@ -32,7 +34,7 @@ const FILTERS = ['All', 'stable', 'minor', 'medium', 'high', 'consent']
 const SEVS = ['Stable', 'Minor', 'Medium', 'High', 'Critical']
 
 export default function Dashboard() {
-  const { documents, reports } = useVault()
+  const { documents, reports, chain } = useVault()
   const [filter, setFilter] = useState('All')
 
   const stats = useMemo(() => summarizeDocuments(documents), [documents])
@@ -75,6 +77,35 @@ export default function Dashboard() {
           </GlowButton>
         </Link>
       </div>
+
+      {chain && chain.online && chain.stats ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-juridical/30 bg-juridical/5 px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-juridical/40 bg-juridical/10 text-juridical-soft">
+              <ShieldCheck size={17} />
+            </span>
+            <div className="leading-tight">
+              <p className="font-grotesk text-sm font-semibold text-ivory">
+                <span className="tnum">{chain.stats.reports}</span> reports verified on GenLayer
+              </p>
+              <p className="text-[11px] text-ivory/45">
+                Live Bradbury contract: {chain.stats.analyses} analyses, {chain.stats.snapshots} snapshots
+              </p>
+            </div>
+          </div>
+          {IS_DEPLOYED ? (
+            <a
+              href={EXPLORER + '/address/' + CONTRACT_ADDRESS}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs text-juridical-soft transition hover:text-juridical"
+            >
+              View contract
+              <ExternalLink size={12} />
+            </a>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard icon={Eye} label="Watched documents" value={stats.watched} accent="#c8a45b" index={0} />

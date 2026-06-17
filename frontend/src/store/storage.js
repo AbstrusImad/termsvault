@@ -19,6 +19,7 @@ export function loadState() {
       badges: parsed.badges || [],
       settings: { ...buildSeedState().settings, ...(parsed.settings || {}) },
       wallet: parsed.wallet || { connected: false, address: '' },
+      chain: parsed.chain || { online: false, mode: 'live', stats: null, contract: '' },
       seededAt: parsed.seededAt,
     }
   } catch (err) {

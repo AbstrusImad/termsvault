@@ -1,40 +1,60 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Wallet, Plus, Menu, Power } from 'lucide-react'
+import { Wallet, Plus, Menu, Power, ExternalLink } from 'lucide-react'
 import { useVault } from '../../store/VaultContext'
 import { useToast } from '../../store/ToastContext'
 import { shortAddress } from '../../utils/formatters'
 import GlowButton from '../ui/GlowButton'
+import {
+  connectWallet,
+  disconnectWallet,
+  subscribeWallet,
+  hasInjectedProvider,
+} from '../../genlayer/wallet'
 
-function makeMockAddress() {
-  const hex = '0123456789aBcDeF'
-  let body = ''
-  for (let i = 0; i < 4; i++) body += hex[Math.floor(Math.random() * hex.length)]
-  let tail = ''
-  for (let i = 0; i < 4; i++) tail += hex[Math.floor(Math.random() * hex.length)]
-  return '0x7A4' + body + '9F' + tail.slice(0, 2)
-}
+const METAMASK_URL = 'https://metamask.io/download/'
 
 export default function Topbar({ onToggleSidebar }) {
   const { wallet, setWallet } = useVault()
   const toast = useToast()
   const [busy, setBusy] = useState(false)
+  const [net, setNet] = useState({ chainOk: false, hasProvider: hasInjectedProvider() })
 
-  function connect() {
+  // Mirror the live wallet state into the Vault store (for display) and the dot.
+  useEffect(() => {
+    const unsub = subscribeWallet((s) => {
+      setNet({ chainOk: s.chainOk, hasProvider: s.hasProvider })
+      setWallet({ connected: s.connected, address: s.address })
+    })
+    return unsub
+  }, [setWallet])
+
+  async function connect() {
     if (wallet.connected) {
-      setWallet({ connected: false, address: '' })
+      disconnectWallet()
       toast.info('Wallet disconnected')
       return
     }
+    if (!hasInjectedProvider()) {
+      toast.error('No wallet detected. Install MetaMask to sign on-chain analyses.')
+      return
+    }
     setBusy(true)
-    setTimeout(() => {
-      const address = makeMockAddress()
-      setWallet({ connected: true, address })
-      setBusy(false)
+    try {
+      const { address, chainOk } = await connectWallet()
       toast.success('Wallet connected ' + shortAddress(address))
-    }, 600)
+      if (!chainOk) toast.info('Switch your wallet to GenLayer Bradbury to sign analyses.')
+    } catch (err) {
+      if (err && err.code === 4001) toast.error('You cancelled the connection')
+      else toast.error('Could not connect the wallet')
+    } finally {
+      setBusy(false)
+    }
   }
+
+  const noProvider = !net.hasProvider
+  const dotColor = wallet.connected ? (net.chainOk ? '#3fd6b0' : '#e0a04b') : '#8a8678'
 
   return (
     <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-ink-edge bg-ink-deep/80 px-4 py-3 backdrop-blur-md md:px-6">
@@ -63,20 +83,41 @@ export default function Topbar({ onToggleSidebar }) {
             New Document
           </GlowButton>
         </Link>
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={connect}
-          disabled={busy}
-          className={
-            'inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 font-grotesk text-sm font-semibold transition disabled:opacity-60 ' +
-            (wallet.connected
-              ? 'border-juridical/50 bg-juridical/10 text-juridical-soft'
-              : 'border-gold/40 bg-gold/10 text-gold-soft hover:bg-gold/20')
-          }
-        >
-          {wallet.connected ? <Power size={15} /> : <Wallet size={15} />}
-          {busy ? 'Connecting...' : wallet.connected ? shortAddress(wallet.address) : 'Connect Wallet'}
-        </motion.button>
+
+        {noProvider ? (
+          <a
+            href={METAMASK_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-xl border border-ink-edge bg-ink-panel px-4 py-2.5 font-grotesk text-sm font-semibold text-ivory/60 transition hover:text-gold"
+          >
+            <Wallet size={15} />
+            No wallet detected
+            <ExternalLink size={13} />
+          </a>
+        ) : (
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={connect}
+            disabled={busy}
+            className={
+              'inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 font-grotesk text-sm font-semibold transition disabled:opacity-60 ' +
+              (wallet.connected
+                ? 'border-juridical/50 bg-juridical/10 text-juridical-soft'
+                : 'border-gold/40 bg-gold/10 text-gold-soft hover:bg-gold/20')
+            }
+          >
+            {wallet.connected ? (
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: dotColor, boxShadow: '0 0 8px ' + dotColor }} />
+            ) : busy ? (
+              <Wallet size={15} />
+            ) : (
+              <Wallet size={15} />
+            )}
+            {busy ? 'Connecting...' : wallet.connected ? shortAddress(wallet.address) : 'Connect Wallet'}
+            {wallet.connected ? <Power size={14} className="opacity-70" /> : null}
+          </motion.button>
+        )}
       </div>
     </header>
   )

@@ -23,6 +23,7 @@ import Timeline from '../components/ui/Timeline'
 import EmptyState from '../components/ui/EmptyState'
 import LoadingScan from '../components/ui/LoadingScan'
 import TextScanner from '../components/documents/TextScanner'
+import ConsensusFlow from '../components/diff/ConsensusFlow'
 import { formatDateTime, shortHash } from '../utils/formatters'
 import { accumulatedRisk, severityColor, STATUS_META, statusForDocument } from '../utils/riskScoring'
 import { analyzeSemanticDiff } from '../genlayer/genlayerClient'
@@ -30,13 +31,16 @@ import { analyzeSemanticDiff } from '../genlayer/genlayerClient'
 export default function DocumentDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { documents, runAnalysis, generateReport, deleteDocument } = useVault()
+  const { documents, settings, runAnalysis, generateReport, deleteDocument } = useVault()
   const toast = useToast()
 
   const doc = documents.find((d) => d.id === id)
   const [showAnalyze, setShowAnalyze] = useState(false)
   const [newText, setNewText] = useState('')
   const [busy, setBusy] = useState(false)
+  const [stage, setStage] = useState(null)
+
+  const isLive = (settings.genlayerMode || (settings.genlayerMockMode ? 'mock' : 'live')) === 'live'
 
   const risk = useMemo(() => (doc ? accumulatedRisk(doc.history) : 0), [doc])
 
@@ -63,21 +67,51 @@ export default function DocumentDetail() {
       toast.error('Paste a new version with at least a few words.')
       return
     }
-    setBusy(true)
     const prev = doc.snapshots[doc.snapshots.length - 1]
-    try {
-      await analyzeSemanticDiff({ text: prev.text }, { text: newText })
-      const result = runAnalysis(doc.id, newText)
-      setBusy(false)
-      setShowAnalyze(false)
-      setNewText('')
-      if (result) {
-        toast.success('Analysis complete: ' + result.analysis.changeType)
-        navigate('/diff/' + doc.id)
+
+    if (!isLive) {
+      // Mock mode: instant local engine, unchanged UX.
+      setBusy(true)
+      try {
+        await analyzeSemanticDiff(prev.text, newText, { project: doc.project, category: doc.category })
+        const result = runAnalysis(doc.id, newText)
+        setBusy(false)
+        setShowAnalyze(false)
+        setNewText('')
+        if (result) {
+          toast.success('Analysis complete: ' + result.analysis.changeType)
+          navigate('/diff/' + doc.id)
+        }
+      } catch (err) {
+        setBusy(false)
+        toast.error('Analysis failed. Try again.')
       }
+      return
+    }
+
+    // Live mode: real Bradbury flow with consensus lifecycle.
+    setBusy(true)
+    setStage({ name: 'wallet' })
+    try {
+      const res = await analyzeSemanticDiff(prev.text, newText, {
+        project: doc.project,
+        category: doc.category,
+        onStage: (name, extra) => setStage((s) => ({ ...(s || {}), name, ...extra })),
+      })
+      const result = runAnalysis(doc.id, newText, res.analysis)
+      toast.success('Verified on GenLayer: ' + res.analysis.changeType)
+      setTimeout(() => {
+        setBusy(false)
+        setShowAnalyze(false)
+        setNewText('')
+        setStage(null)
+        if (result) navigate('/diff/' + doc.id)
+      }, 1100)
     } catch (err) {
       setBusy(false)
-      toast.error('Analysis failed. Try again.')
+      const message = err && err.userMessage ? err.userMessage : 'Analysis failed. Try again.'
+      setStage((s) => ({ ...(s || {}), name: 'error', message }))
+      toast.error(message)
     }
   }
 
@@ -119,7 +153,7 @@ export default function DocumentDetail() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <GlowButton variant="gold" icon={ScanSearch} onClick={() => setShowAnalyze(true)}>
+          <GlowButton variant="gold" icon={ScanSearch} onClick={() => { setStage(null); setShowAnalyze(true) }}>
             Run New Analysis
           </GlowButton>
           <GlowButton
@@ -199,7 +233,7 @@ export default function DocumentDetail() {
                 change.
               </p>
               <div className="mt-4">
-                <GlowButton variant="gold" icon={ScanSearch} onClick={() => setShowAnalyze(true)}>
+                <GlowButton variant="gold" icon={ScanSearch} onClick={() => { setStage(null); setShowAnalyze(true) }}>
                   Run New Analysis
                 </GlowButton>
               </div>
@@ -253,12 +287,15 @@ export default function DocumentDetail() {
                 </button>
               </div>
               <div className="p-5">
-                {busy ? (
+                {busy && isLive ? (
+                  <ConsensusFlow stage={stage} />
+                ) : busy ? (
                   <LoadingScan lines={6} label="Comparing meaning against baseline" />
                 ) : (
                   <>
                     <p className="mb-3 text-sm text-ivory/55">
-                      Paste the updated version. It will be compared against the latest snapshot.
+                      Paste the updated version. It will be compared against the latest snapshot
+                      {isLive ? ' and analyzed on GenLayer Bradbury with AI consensus.' : '.'}
                     </p>
                     <div className="mb-3">
                       <p className="mb-1.5 font-grotesk text-xs uppercase tracking-wider text-ivory/45">
@@ -273,6 +310,21 @@ export default function DocumentDetail() {
                       placeholder="Paste the new version of the document here."
                       className="w-full resize-y rounded-xl border border-ink-edge bg-ink-deep/60 p-3 font-body text-sm leading-relaxed text-ivory outline-none focus:border-gold/60"
                     />
+                    {isLive ? (
+                      <p className="mt-2 text-[11px] text-ivory/40">
+                        On-chain analysis takes 1 to 5+ minutes. Low on GEN? Use the
+                        {' '}
+                        <a
+                          href="https://testnet-faucet.genlayer.foundation/"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-gold-soft hover:text-gold"
+                        >
+                          testnet faucet
+                        </a>
+                        .
+                      </p>
+                    ) : null}
                     <div className="mt-4 flex justify-end gap-2">
                       <GlowButton variant="ghost" onClick={() => setShowAnalyze(false)}>
                         Cancel

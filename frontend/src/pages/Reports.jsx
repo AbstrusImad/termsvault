@@ -9,6 +9,7 @@ import {
   Check,
   BadgeCheck,
   GitCompareArrows,
+  ExternalLink,
 } from 'lucide-react'
 import { useVault } from '../store/VaultContext'
 import { useToast } from '../store/ToastContext'
@@ -199,6 +200,17 @@ export default function Reports() {
                       <ShieldCheck size={13} />
                       {active.genlayerStatus}
                     </p>
+                    {active.verified && active.contract ? (
+                      <a
+                        href={'https://explorer-bradbury.genlayer.com/address/' + active.contract}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-ivory/45 transition hover:text-gold"
+                      >
+                        View contract on explorer
+                        <ExternalLink size={11} />
+                      </a>
+                    ) : null}
                   </Section>
                 </div>
 

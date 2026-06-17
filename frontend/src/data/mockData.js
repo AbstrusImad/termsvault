@@ -3,7 +3,9 @@ import { buildDemoDocuments } from './demoDocuments'
 import { snapshotHash } from '../utils/documentParser'
 
 export const DEFAULT_SETTINGS = {
-  genlayerMockMode: true,
+  // 'live' talks to the deployed Bradbury contract; 'mock' uses the local engine.
+  genlayerMode: 'live',
+  genlayerMockMode: false,
   riskThreshold: 60,
   animations: true,
   theme: 'archive',
@@ -57,6 +59,7 @@ export function buildSeedState() {
     settings: { ...DEFAULT_SETTINGS },
     wallet: { connected: false, address: '' },
     badges: [],
+    chain: { online: false, mode: 'live', stats: null, contract: '' },
     seededAt: new Date().toISOString(),
   }
 }

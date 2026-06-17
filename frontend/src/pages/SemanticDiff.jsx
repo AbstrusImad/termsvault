@@ -102,6 +102,18 @@ export default function SemanticDiff() {
             <ShieldCheck size={12} />
             Confidence {an.confidence}
           </span>
+          {an.verified ? (
+            <a
+              href={an.contract ? 'https://explorer-bradbury.genlayer.com/address/' + an.contract : 'https://explorer-bradbury.genlayer.com'}
+              target="_blank"
+              rel="noreferrer"
+              className="chip"
+              style={{ color: '#3fd6b0', borderColor: '#3fd6b055', backgroundColor: '#3fd6b014' }}
+            >
+              <ShieldCheck size={12} />
+              Verified on GenLayer
+            </a>
+          ) : null}
         </div>
       </motion.div>
 

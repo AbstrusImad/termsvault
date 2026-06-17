@@ -5,11 +5,13 @@ import Topbar from './Topbar'
 import Sidebar from './Sidebar'
 import AnimatedBackground from '../animations/AnimatedBackground'
 import { useVault } from '../../store/VaultContext'
+import { useGenLayerSync } from '../../genlayer/useGenLayerSync'
 
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
   const { settings } = useVault()
+  useGenLayerSync()
 
   return (
     <div className="relative min-h-screen">

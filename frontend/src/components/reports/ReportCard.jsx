@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ScrollText, ArrowUpRight } from 'lucide-react'
+import { ScrollText, ArrowUpRight, ShieldCheck } from 'lucide-react'
 import SeverityBadge from '../ui/SeverityBadge'
 import { ImpactBadge } from '../ui/RiskBadge'
 import { shortHash, formatDate } from '../../utils/formatters'
@@ -35,6 +35,12 @@ export default function ReportCard({ report, index = 0, onOpen }) {
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <SeverityBadge severity={report.severity} size="sm" />
         <ImpactBadge impact={report.userImpact} />
+        {report.verified ? (
+          <span className="chip" style={{ color: '#3fd6b0', borderColor: '#3fd6b055', backgroundColor: '#3fd6b014' }}>
+            <ShieldCheck size={12} />
+            Verified on GenLayer
+          </span>
+        ) : null}
       </div>
 
       <div className="mt-4 flex items-center justify-between border-t border-ink-edge pt-3">

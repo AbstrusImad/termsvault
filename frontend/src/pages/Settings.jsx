@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   Settings as SettingsIcon,
@@ -9,6 +9,8 @@ import {
   Trash2,
   Palette,
   Sparkles,
+  ExternalLink,
+  Droplets,
 } from 'lucide-react'
 import { useVault } from '../store/VaultContext'
 import { useToast } from '../store/ToastContext'
@@ -16,6 +18,8 @@ import HolographicPanel from '../components/ui/HolographicPanel'
 import GlowButton from '../components/ui/GlowButton'
 import { CATEGORIES } from '../data/demoDocuments'
 import { exportState } from '../store/storage'
+import { getGenLayerStatus, CONTRACT_ADDRESS, EXPLORER, FAUCET, IS_DEPLOYED } from '../genlayer/genlayerClient'
+import { shortHash } from '../utils/formatters'
 
 function Toggle({ checked, onChange, label, hint }) {
   return (
@@ -48,6 +52,22 @@ export default function Settings() {
   const { settings, updateSettings, resetVault } = useVault()
   const toast = useToast()
   const [confirmClear, setConfirmClear] = useState(false)
+  const [status, setStatus] = useState(null)
+
+  const mode = settings.genlayerMode || (settings.genlayerMockMode ? 'mock' : 'live')
+  const isMock = mode === 'mock'
+
+  useEffect(() => {
+    let cancelled = false
+    getGenLayerStatus()
+      .then((s) => {
+        if (!cancelled) setStatus(s)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [mode])
 
   function toggleCategory(cat) {
     const active = settings.activeCategories.includes(cat)
@@ -90,14 +110,65 @@ export default function Settings() {
       <HolographicPanel title="GenLayer" icon={Cpu} subtitle="Semantic verification backend">
         <div className="space-y-3">
           <Toggle
-            checked={settings.genlayerMockMode}
-            onChange={(v) => updateSettings({ genlayerMockMode: v })}
+            checked={isMock}
+            onChange={(v) => updateSettings({ genlayerMode: v ? 'mock' : 'live', genlayerMockMode: v })}
             label="GenLayer mock mode"
-            hint="Simulate validation locally. Disable to wire a live GenLayer client later."
+            hint="ON simulates validation locally. OFF runs live on GenLayer Bradbury with AI consensus."
           />
-          <div className="rounded-xl border border-ink-edge bg-ink-deep/40 px-4 py-3 text-xs text-ivory/50">
-            Status: {settings.genlayerMockMode ? 'Verified by GenLayer (mock)' : 'Live mode placeholder'}
+          <div className="rounded-xl border border-ink-edge bg-ink-deep/40 px-4 py-3 text-xs text-ivory/55">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-ivory/45">Mode</span>
+              <span className={isMock ? 'text-gold-soft' : 'text-juridical-soft'}>
+                {isMock ? 'Mock (local engine)' : 'Live (Bradbury)'}
+              </span>
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <span className="text-ivory/45">Network</span>
+              <span className="inline-flex items-center gap-1.5">
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{
+                    backgroundColor: isMock ? '#c8a45b' : status && status.online ? '#3fd6b0' : '#e0a04b',
+                  }}
+                />
+                {isMock ? 'Simulated' : status ? (status.online ? 'Online' : status.status || 'Offline') : 'Checking...'}
+              </span>
+            </div>
+            {!isMock && status && status.online ? (
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <span className="text-ivory/45">Verified on GenLayer</span>
+                <span className="tnum text-juridical-soft">{status.reports} reports</span>
+              </div>
+            ) : null}
+            {!isMock ? (
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <span className="text-ivory/45">Contract</span>
+                {IS_DEPLOYED ? (
+                  <a
+                    href={EXPLORER + '/address/' + CONTRACT_ADDRESS}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 font-mono text-juridical-soft hover:text-juridical"
+                  >
+                    {shortHash(CONTRACT_ADDRESS, 8, 6)}
+                    <ExternalLink size={11} />
+                  </a>
+                ) : (
+                  <span className="font-mono text-ivory/40">Not deployed yet</span>
+                )}
+              </div>
+            ) : null}
           </div>
+          <a
+            href={FAUCET}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-gold-soft transition hover:text-gold"
+          >
+            <Droplets size={13} />
+            GenLayer testnet faucet (top up GEN for AI transactions)
+            <ExternalLink size={12} />
+          </a>
         </div>
       </HolographicPanel>
 
