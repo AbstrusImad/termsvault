@@ -13,6 +13,22 @@ the meaning changed, how severe the change is, who it affects, and whether your
 consent should have been asked for. It is built to show how GenLayer can protect
 not just data, but the meaning of human agreements.
 
+## Live
+
+- App: https://termsvault.pages.dev/
+- Contract (GenLayer Bradbury Testnet): `0x91Dd4ac432159bf7CC945278A51bC43cF72eDB44`
+- Explorer: https://explorer-bradbury.genlayer.com/address/0x91Dd4ac432159bf7CC945278A51bC43cF72eDB44
+- Deploy transaction: `0x3ed696133095debea6fbeb262360cafa9a4fe7dc9233f1b50aa08a32f9450c5d`
+- Repository: https://github.com/AbstrusImad/termsvault
+- Faucet (test GEN): https://testnet-faucet.genlayer.foundation/
+
+TermsVault runs live on GenLayer Bradbury. The deployable Intelligent Contract is
+`genlayer/contract.py`, and the analyze action is a real on-chain consensus write:
+validators agree on the categorical verdict exactly and the numeric drift and
+confidence within tolerance. Connect a wallet on Bradbury and claim test GEN from
+the faucet to run a real analysis. Demo data is still seeded so the workspace
+looks full, and a mock mode remains available in Settings as an offline fallback.
+
 ## The problem
 
 Companies quietly rewrite the documents that define your rights. A privacy policy
