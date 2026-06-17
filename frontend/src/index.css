@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #0a0c14;
+  --ink-deep: #06070d;
+  --ink-panel: #141826;
+  --ivory: #f4efe3;
+  --gold: #c8a45b;
+  --juridical: #3fd6b0;
+  --coral: #e85c5c;
+  --drift: #7b5cff;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--ink-deep);
+  color: var(--ivory);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(200, 164, 91, 0.32);
+  color: #fff;
+}
+
+/* Numerals tabular by default for figures */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+.font-display {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+.font-grotesk {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+}
+.font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* Custom scrollbar, archival */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0c14;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a3047;
+  border-radius: 6px;
+  border: 2px solid #0a0c14;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a4263;
+}
+
+@layer components {
+  .panel {
+    @apply rounded-2xl border border-ink-edge bg-ink-panel/70 backdrop-blur-sm;
+  }
+  .panel-glow {
+    box-shadow: 0 0 0 1px rgba(200, 164, 91, 0.08), 0 24px 60px -28px rgba(0, 0, 0, 0.9);
+  }
+  .hairline {
+    @apply border-b border-ink-edge;
+  }
+  .text-faint {
+    color: var(--ivory);
+    opacity: 0.55;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-ink-edge px-2.5 py-1 text-xs font-grotesk uppercase tracking-wider;
+  }
+}
+
+/* Grain/paper overlay used by AnimatedBackground */
+.paper-grain {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 3px 3px;
+}
+
+/* Holographic engraved hash text */
+.engraved {
+  background: linear-gradient(180deg, #e0c585 0%, #9a7836 60%, #6e5526 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Scanner light bar */
+.scanline {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(63, 214, 176, 0.0) 10%,
+    rgba(63, 214, 176, 0.6) 50%,
+    rgba(63, 214, 176, 0.0) 90%,
+    transparent 100%
+  );
+}
+
+/* Deciphering text uses monospace fade */
+.decipher span {
+  display: inline-block;
+  animation: decipherIn 0.5s ease forwards;
+  opacity: 0;
+}
+@keyframes decipherIn {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+.ignite {
+  color: var(--coral);
+  text-shadow: 0 0 10px rgba(232, 92, 92, 0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

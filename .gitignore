@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+**/node_modules/
+
+# build output
+dist/
+**/dist/
+.next/
+build/
+
+# env and secrets
+.env
+**/.env
+*.local
+
+# logs
+*.log
+npm-debug.log*
+
+# backend runtime storage (keep the seeded file, ignore runtime writes)
+backend/storage/*.runtime.json
+
+# python
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# os
+.DS_Store
+Thumbs.db
